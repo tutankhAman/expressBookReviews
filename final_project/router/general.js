@@ -12,20 +12,35 @@ public_users.post("/register", (req,res) => {
 
 // Get the book list available in the shop
 public_users.get('/',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).send(JSON.stringify({books: books}, null, 2));
 });
 
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
- });
+  const isbn = req.params.isbn;
+  if (books[isbn]) {
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).send(JSON.stringify({book: books[isbn]}, null, 2));
+  }
+  return res.status(404).json({message: `Book with ISBN ${isbn} not found`});
+});
   
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+  const author = req.params.author;
+  const authorBooks = Object.keys(books)
+    .filter(isbn => books[isbn].author === author)
+    .reduce((acc, isbn) => {
+      acc[isbn] = books[isbn];
+      return acc;
+    }, {});
+
+  if (Object.keys(authorBooks).length > 0) {
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).send(JSON.stringify({books: authorBooks}, null, 2));
+  }
+  return res.status(404).json({message: `No books found for author: ${author}`});
 });
 
 // Get all books based on title
