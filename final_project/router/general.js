@@ -234,6 +234,63 @@ public_users.get('/title/:title',function (req, res) {
   return res.status(404).json({message: `No books found with title: ${title}`});
 });
 
+// Add these new async endpoints after the existing title endpoint
+// Get books by title (async version with Promise)
+public_users.get('/async/title/:title', async function (req, res) {
+  const getBooksByTitleAsync = (title) => {
+    return new Promise((resolve, reject) => {
+      try {
+        const titleBooks = Object.keys(books)
+          .filter(isbn => books[isbn].title === title)
+          .reduce((acc, isbn) => {
+            acc[isbn] = books[isbn];
+            return acc;
+          }, {});
+
+        if (Object.keys(titleBooks).length > 0) {
+          setTimeout(() => {
+            resolve(titleBooks);
+          }, 1000);
+        } else {
+          reject(new Error('No books found with this title'));
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
+
+  try {
+    const title = req.params.title;
+    const titleBooks = await getBooksByTitleAsync(title);
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).send(JSON.stringify({
+      message: "Books retrieved successfully",
+      books: titleBooks
+    }, null, 2));
+  } catch (error) {
+    return res.status(404).json({
+      message: "Error retrieving books",
+      error: error.message
+    });
+  }
+});
+
+// Alternative version using axios
+public_users.get('/async-axios/title/:title', async function (req, res) {
+  try {
+    const title = req.params.title;
+    // In a real application, this would be an external API endpoint
+    const response = await axios.get(`http://localhost:5000/title/${title}`);
+    return res.status(200).json(response.data);
+  } catch (error) {
+    return res.status(404).json({
+      message: "Error retrieving books",
+      error: error.message
+    });
+  }
+});
+
 //  Get book review
 public_users.get('/review/:isbn',function (req, res) {
   const isbn = req.params.isbn;
