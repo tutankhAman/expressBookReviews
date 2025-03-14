@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
@@ -32,6 +33,53 @@ public_users.post("/register", (req,res) => {
 public_users.get('/',function (req, res) {
   res.setHeader('Content-Type', 'application/json');
   res.status(200).send(JSON.stringify({books: books}, null, 2));
+});
+
+// Add this new async endpoint after the existing book list endpoint
+// Get the book list (async version with Promise)
+public_users.get('/async', async function (req, res) {
+  // Simulate getting books from an external API
+  const getBooksAsync = () => {
+    return new Promise((resolve, reject) => {
+      try {
+        // Simulate API delay
+        setTimeout(() => {
+          resolve(books);
+        }, 1000);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
+
+  try {
+    const booksList = await getBooksAsync();
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).send(JSON.stringify({
+      message: "Books retrieved successfully",
+      books: booksList
+    }, null, 2));
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error retrieving books",
+      error: error.message
+    });
+  }
+});
+
+// Alternative version using axios (if you have a real API endpoint)
+public_users.get('/async-axios', async function (req, res) {
+  try {
+    // For demonstration, we'll simulate an API call
+    // In reality, you would use a real API endpoint
+    const response = await axios.get('http://localhost:5000/');
+    return res.status(200).json(response.data);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error retrieving books",
+      error: error.message
+    });
+  }
 });
 
 // Get book details based on ISBN
