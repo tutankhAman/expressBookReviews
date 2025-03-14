@@ -91,7 +91,58 @@ public_users.get('/isbn/:isbn',function (req, res) {
   }
   return res.status(404).json({message: `Book with ISBN ${isbn} not found`});
 });
-  
+
+// Add these new async endpoints after the existing ISBN endpoint
+// Get book by ISBN (async version with Promise)
+public_users.get('/async/isbn/:isbn', async function (req, res) {
+  const getBookByIsbnAsync = (isbn) => {
+    return new Promise((resolve, reject) => {
+      try {
+        const book = books[isbn];
+        if (book) {
+          setTimeout(() => {
+            resolve(book);
+          }, 1000);
+        } else {
+          reject(new Error('Book not found'));
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
+
+  try {
+    const isbn = req.params.isbn;
+    const book = await getBookByIsbnAsync(isbn);
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).send(JSON.stringify({
+      message: "Book retrieved successfully",
+      book: book
+    }, null, 2));
+  } catch (error) {
+    return res.status(404).json({
+      message: "Error retrieving book",
+      error: error.message
+    });
+  }
+});
+
+// Alternative version using axios
+public_users.get('/async-axios/isbn/:isbn', async function (req, res) {
+  try {
+    const isbn = req.params.isbn;
+    // In a real application, this would be an external API endpoint
+    const response = await axios.get(`http://localhost:5000/isbn/${isbn}`);
+    return res.status(200).json(response.data);
+  } catch (error) {
+    return res.status(404).json({
+      message: "Error retrieving book",
+      error: error.message
+    });
+  }
+});
+
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
   const author = req.params.author;
