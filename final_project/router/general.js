@@ -160,6 +160,63 @@ public_users.get('/author/:author',function (req, res) {
   return res.status(404).json({message: `No books found for author: ${author}`});
 });
 
+// Add these new async endpoints after the existing author endpoint
+// Get books by author (async version with Promise)
+public_users.get('/async/author/:author', async function (req, res) {
+  const getBooksByAuthorAsync = (author) => {
+    return new Promise((resolve, reject) => {
+      try {
+        const authorBooks = Object.keys(books)
+          .filter(isbn => books[isbn].author === author)
+          .reduce((acc, isbn) => {
+            acc[isbn] = books[isbn];
+            return acc;
+          }, {});
+
+        if (Object.keys(authorBooks).length > 0) {
+          setTimeout(() => {
+            resolve(authorBooks);
+          }, 1000);
+        } else {
+          reject(new Error('No books found for this author'));
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
+
+  try {
+    const author = req.params.author;
+    const authorBooks = await getBooksByAuthorAsync(author);
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).send(JSON.stringify({
+      message: "Books retrieved successfully",
+      books: authorBooks
+    }, null, 2));
+  } catch (error) {
+    return res.status(404).json({
+      message: "Error retrieving books",
+      error: error.message
+    });
+  }
+});
+
+// Alternative version using axios
+public_users.get('/async-axios/author/:author', async function (req, res) {
+  try {
+    const author = req.params.author;
+    // In a real application, this would be an external API endpoint
+    const response = await axios.get(`http://localhost:5000/author/${author}`);
+    return res.status(200).json(response.data);
+  } catch (error) {
+    return res.status(404).json({
+      message: "Error retrieving books",
+      error: error.message
+    });
+  }
+});
+
 // Get all books based on title
 public_users.get('/title/:title',function (req, res) {
   const title = req.params.title;
